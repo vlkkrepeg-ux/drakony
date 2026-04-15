@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐉 Диагностика Пяти Драконов</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px; 
+            line-height: 1.6;
+            color: #333;
+        }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 10px; font-size: 2em; }
+        .subtitle { text-align: center; color: #7f8c8d; margin-bottom: 30px; font-size: 0.9em; }
+        
+        .dragon-section { 
+            margin-bottom: 25px; 
+            border-left: 5px solid; 
+            padding: 20px; 
+            background: #f9f9f9; 
+            border-radius: 0 10px 10px 0;
+            transition: all 0.3s;
+        }
+        .dragon-section:hover { transform: translateX(5px); }
+        
+        .white { border-left-color: #bdc3c7; background: linear-gradient(to right, #ffffff, #f8f9fa); }
+        .yellow { border-left-color: #f1c40f; background: linear-gradient(to right, #fff9e6, #fef9e7); }
+        .blue { border-left-color: #3498db; background: linear-gradient(to right, #ebf5fb, #eaf2f8); }
+        .red { border-left-color: #e74c3c; background: linear-gradient(to right, #fdedec, #fadbd8); }
+        .green { border-left-color: #27ae60; background: linear-gradient(to right, #e9f7ef, #e8f8f5); }
+        
+        .dragon-title { 
+            font-size: 1.3em; 
+            font-weight: bold; 
+            margin-bottom: 15px; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+        }
+        
+        .question { 
+            margin-bottom: 12px; 
+            padding: 10px; 
+            background: rgba(255,255,255,0.7); 
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        select { 
+            padding: 8px 12px; 
+            border-radius: 6px; 
+            border: 1px solid #ddd; 
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        
+        .calculate-btn { 
+            display: block; 
+            width: 100%; 
+            padding: 15px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            border: none; 
+            border-radius: 10px; 
+            font-size: 1.1em; 
+            cursor: pointer; 
+            margin: 30px 0;
+            transition: transform 0.2s;
+        }
+        .calculate-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }
+        
+        #results { display: none; margin-top: 30px; }
+        
+        .result-card { 
+            padding: 20px; 
+            margin-bottom: 15px; 
+            border-radius: 12px; 
+            position: relative;
+            overflow: hidden;
+        }
+        .result-card::before { 
+            content: ''; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            height: 100%; 
+            width: var(--percent, 0%); 
+            background: rgba(255,255,255,0.3); 
+            z-index: 0;
+        }
+        .result-content { position: relative; z-index: 1; }
+        
+        .status-ok { background: #27ae60; color: white; }
+        .status-warn { background: #f39c12; color: white; }
+        .status-crit { background: #e74c3c; color: white; }
+        
+        .score-bar { 
+            height: 8px; 
+            background: rgba(0,0,0,0.1); 
+            border-radius: 4px; 
+            margin-top: 8px; 
+            overflow: hidden;
+        }
+        .score-fill { height: 100%; background: rgba(255,255,255,0.8); border-radius: 4px; transition: width 1s; }
+        
+        .schedule { 
+            background: #f8f9fa; 
+            padding: 25px; 
+            border-radius: 15px; 
+            margin-top: 30px; 
+            border: 2px dashed #bdc3c7;
+        }
+        .schedule h2 { color: #2c3e50; margin-bottom: 20px; }
+        .day-card { 
+            background: white; 
+            padding: 15px; 
+            margin-bottom: 10px; 
+            border-radius: 8px; 
+            border-left: 4px solid;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .warning-box { 
+            background: #fff3cd; 
+            border: 1px solid #ffeaa7; 
+            color: #856404; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+        
+        .ritual-list { list-style: none; margin-top: 10px; }
+        .ritual-list li { 
+            padding: 8px 0; 
+            padding-left: 25px; 
+            position: relative;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .ritual-list li:before { 
+            content: "✦"; 
+            position: absolute; 
+            left: 0; 
+            color: inherit;
+            font-weight: bold;
+        }
+        
+        .local-points { 
+            background: #e8f4f8; 
+            padding: 20px; 
+            border-radius: 10px; 
+            margin-top: 20px;
+            border-left: 4px solid #3498db;
+        }
+        
+        @media print {
+            body { background: white; }
+            .container { box-shadow: none; max-width: 100%; }
+            .calculate-btn { display: none; }
+            select { appearance: none; border: none; background: transparent; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐉 Диагностика Пяти Драконов</h1>
+        <p class="subtitle">Пройдите тест и получите персональный план работы с энергетическими системами организма</p>
+
+        <form id="dragonForm">
+            <!-- Белый Дракон -->
+            <div class="dragon-section white">
+                <div class="dragon-title">🤍 Белый Дракон (Легкие/Кишечник)</div>
+                <div id="whiteQuestions"></div>
+            </div>
+
+            <!-- Желтый Дракон -->
+            <div class="dragon-section yellow">
+                <div class="dragon-title">💛 Желтый Дракон (Селезенка)</div>
+                <div id="yellowQuestions"></div>
+            </div>
+
+            <!-- Синий Дракон -->
+            <div class="dragon-section blue">
+                <div class="dragon-title">💙 Синий Дракон (Почки)</div>
+                <div id="blueQuestions"></div>
+                <div style="margin-top:15px; padding:10px; background:rgba(52,152,219,0.1); border-radius:8px; font-size:0.9em;">
+                    <strong>Серьезные патологии (при наличии +3 балла каждая):</strong><br>
+                    <label><input type="checkbox" class="pathology" data-dragon="blue" value="3"> Опущение почек</label><br>
+                    <label><input type="checkbox" class="pathology" data-dragon="blue" value="3"> Кисты</label><br>
+                    <label><input type="checkbox" class="pathology" data-dragon="blue" value="3"> Камни</label><br>
+                    <label><input type="checkbox" class="pathology" data-dragon="blue" value="3"> Песок</label><br>
+                    <label><input type="checkbox" class="pathology" data-dragon="blue" value="3"> Воспаления</label>
+                </div>
+            </div>
+
+            <!-- Красный Дракон -->
+            <div class="dragon-section red">
+                <div class="dragon-title">❤️ Красный Дракон (Сердце)</div>
+                <div id="redQuestions"></div>
+            </div>
+
+            <!-- Зеленый Дракон -->
+            <div class="dragon-section green">
+                <div class="dragon-title">💚 Зеленый Дракон (Печень)</div>
+                <div id="greenQuestions"></div>
+            </div>
+
+            <div class="warning-box">
+                ⚠️ <strong>Важно:</strong> При наличии камней в желчном/почках, опухолях или острых воспалениях проконсультируйтесь с врачом перед выполнением техник!
+            </div>
+
+            <button type="button" class="calculate-btn" onclick="calculateResults()">🎯 Рассчитать результаты и получить план</button>
+        </form>
+
+        <div id="results">
+            <h2>📊 Ваши результаты</h2>
+            <div id="scoresContainer"></div>
+            
+            <div class="schedule">
+                <h2>🗓 Ваш персональный план на месяц</h2>
+                <div id="scheduleContainer"></div>
+                
+                <div class="local-points">
+                    <h3>➕ Добавьте локальные точки</h3>
+                    <p>К ритуалам выбранных драконов добавьте работу с точками по тем проблемам, которые беспокоят вас сейчас больше всего.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Структура данных драконов
+        const dragons = {
+            white: {
+                name: "🤍 Белый Дракон",
+                system: "Легкие, Толстый кишечник",
+                max: 26,
+                thresholds: { ok: 10, warn: 20 },
+                color: "#bdc3c7",
+                questions: [
+                    "Легко впадаю в грусть/тоску (особенно осенью)",
+                    "Не могу отпустить старые обиды, застреваю в прошлом",
+                    "Не хватает силы воли, легко сдаюсь",
+                    "Тревожность без видимой причины",
+                    "Дискомфорт в душных помещениях",
+                    "Просыпаюсь между 3:00–5:00 утра",
+                    "Сплю с открытым ртом/храплю",
+                    "Тревожные сны (борьба, погоня)",
+                    "Утром тяжесть в голове",
+                    "Часто простужаюсь, насморк, кашель",
+                    "Ощущение нехватки воздуха, люблю вздыхать",
+                    "Сухая/бледная кожа, слабые волосы",
+                    "Тихий голос, трудно говорить громко"
+                ],
+                scale: [0, 1, 2],
+                rituals: [
+                    "🌅 Утро: ритуал «Радость, привет!»",
+                    "🔥 Согреваем первые точки канала легких",
+                    "💪 Точка Чи Цзе (для иммунитета, выведение патогенного)",
+                    "🪨 При необходимости: массаж Гуаша"
+                ]
+            },
+            yellow: {
+                name: "💛 Желтый Дракон",
+                system: "Селезенка, Поджелудочная",
+                max: 15,
+                thresholds: { ok: 3, warn: 7 },
+                color: "#f1c40f",
+                questions: [
+                    "Слабость после еды",
+                    "Опущенные уголки рта",
+                    "Диарея с раннего утра",
+                    "Пауза восприятия (медленно соображаю)",
+                    "Обидчивость, плаксивость",
+                    "Нет энергии: встал и уже устал",
+                    "Отёчность",
+                    "Храп",
+                    "Ощущение опущения органов",
+                    "Беспричинное беспокойство",
+                    "Носовые кровотечения/синяки",
+                    "Слабость в ногах с 9:00 до 11:00",
+                    "Лишний вес",
+                    "Частые заболевания со слизью",
+                    "Повышенная потливость"
+                ],
+                scale: [0, 1],
+                rituals: [
+                    "🧘 Цигун для селезёнки, поджелудочной и желудка",
+                    "🙌 «Грабельки»: растирание точек мочевого пузыря на нижней части рёбер",
+                    "💃 Танец красоты и молодости (3 раза в каждую сторону)",
+                    "🤝 Упражнение «Дружим печень с селезенкой»"
+                ]
+            },
+            blue: {
+                name: "💙 Синий Дракон",
+                system: "Почки, Мочевой пузырь",
+                max: 9, // без патологий
+                thresholds: { ok: 3, warn: 8 },
+                color: "#3498db",
+                questions: [
+                    "Холод в пояснице, коленях или стопах",
+                    "Ломота/слабость в пояснице к вечеру",
+                    "Слабые волосы, ранняя седина",
+                    "Шум в ушах, снижение слуха",
+                    "Утренние отёки под глазами",
+                    "Учащённое ночное мочеиспускание",
+                    "Необъяснимая усталость",
+                    "Необоснованные страхи, нерешительность",
+                    "Проблемы с памятью, концентрацией"
+                ],
+                scale: [0, 1],
+                rituals: [
+                    "🔢 7 подходов по 7 раз",
+                    "👣 Ребром ладони растираем стопу вдоль центра 108 раз (с левой ноги)",
+                    "📍 Точки: Тай-Си, Фу-Лю",
+                    "🗑 Выводим токсины: простукиваем «сточную канаву»",
+                    "❄️ Выведение холода с прогреванием:",
+                    "   • Точка Юн-Цюань",
+                    "   • Точка Мин-Мэнь", 
+                    "   • Точки Шэнь-Шу",
+                    "💡 Применять при замерзании, зимой, если мерзнут руки/ноги. Можно с пластырями месяц."
+                ]
+            },
+            red: {
+                name: "❤️ Красный Дракон",
+                system: "Сердце, Тонкий кишечник",
+                max: 5,
+                thresholds: { ok: 2, warn: 4 },
+                color: "#e74c3c",
+                questions: [
+                    "Язвочки на языке или яркий кончик языка",
+                    "Нарушения сна, бессонница",
+                    "Трепыхание сердца днём или во сне",
+                    "Стеснение в груди, трудно вздохнуть",
+                    "Сложность формулировки мыслей, волнение при выступлениях"
+                ],
+                scale: [0, 1],
+                rituals: [
+                    "🌞 Утро: «Доброе утро, как я рад(а) тебя видеть»",
+                    "🍫 Вечер: ритуал «Вечернее какао»",
+                    "🔥 Ритуал «Полёт Феникса»"
+                ]
+            },
+            green: {
+                name: "💚 Зеленый Дракон",
+                system: "Печень, Желчный пузырь",
+                max: 45, // 15 вопросов * 3
+                thresholds: { ok: 15, warn: 30 },
+                color: "#27ae60",
+                questions: [
+                    "Раздражительность, выхожу из себя по пустякам",
+                    "Обидчивость, невысказанное недовольство",
+                    "Подавленность, чувство краха планов",
+                    "Трудности с принятием решений",
+                    "Трудно заснуть, крутятся мысли",
+                    "Пробуждения между 1:00–3:00 ночи",
+                    "Тревожные сны, кошмары",
+                    "Горький привкус во рту по утрам",
+                    "Вздутие, отрыжка на фоне стресса",
+                    "Тяжесть в правом подреберье",
+                    "Головные боли «обручем» или в лобной области",
+                    "Напряжение в шее и плечах, судороги",
+                    "Головокружения, мушки перед глазами",
+                    "Сухость/покраснение глаз",
+                    "Ломкие, исчерченные ногти"
+                ],
+                scale: [0, 1, 2, 3],
+                labels: ["Никогда", "Изредка", "Часто", "Постоянно"],
+                rituals: [
+                    "☀️ До 12:00: 4 волшебные точки (простукивать)",
+                    "🌙 Перед сном: массаж точки Тай-Чу",
+                    "💊 Желчегонное пропивать ежемесячно по 10 дней",
+                    "🦵 Упражнение с поднятыми ногами под углом 90° (регулярно)"
+                ]
+            }
+        };
+
+        // Инициализация формы
+        function initForm() {
+            for (const [key, dragon] of Object.entries(dragons)) {
+                const container = document.getElementById(key + 'Questions');
+                dragon.questions.forEach((q, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'question';
+                    const labels = dragon.labels || ["Нет", "Да"];
+                    const options = dragon.scale.map((val, idx) => 
+                        `<option value="${val}">${labels[idx] || val + " балл"}</option>`
+                    ).join('');
+                    
+                    div.innerHTML = `
+                        <span>${i + 1}. ${q}</span>
+                        <select name="${key}_${i}" data-dragon="${key}">
+                            ${options}
+                        </select>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        function calculateResults() {
+            const results = {};
+            const formData = new FormData(document.getElementById('dragonForm'));
+            
+            // Подсчет базовых баллов
+            for (const [key, dragon] of Object.entries(dragons)) {
+                let score = 0;
+                document.querySelectorAll(`select[data-dragon="${key}"]`).forEach(select => {
+                    score += parseInt(select.value);
+                });
+                
+                // Добавляем патологии для синего дракона
+                if (key === 'blue') {
+                    document.querySelectorAll('.pathology:checked').forEach(cb => {
+                        score += parseInt(cb.value);
+                    });
+                }
+                
+                results[key] = {
+                    score: score,
+                    max: dragon.max,
+                    percent: (score / dragon.max * 100).toFixed(0),
+                    ...dragon
+                };
+            }
+
+            // Сортировка по убыванию баллов
+            const sorted = Object.entries(results).sort((a, b) => b[1].score - a[1].score);
+            
+            displayResults(sorted);
+            generateSchedule(sorted);
+            
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function displayResults(sortedDragons) {
+            const container = document.getElementById('scoresContainer');
+            container.innerHTML = '';
+            
+            sortedDragons.forEach(([key, data]) => {
+                let statusClass, statusText;
+                if (data.score <= data.thresholds.ok) {
+                    statusClass = 'status-ok';
+                    statusText = '✅ Отличное состояние';
+                } else if (data.score <= data.thresholds.warn) {
+                    statusClass = 'status-warn';
+                    statusText = '⚠️ Требует внимания';
+                } else {
+                    statusClass = 'status-crit';
+                    statusText = '🆘 Критическое состояние';
+                }
+                
+                const div = document.createElement('div');
+                div.className = `result-card ${statusClass}`;
+                div.style.setProperty('--percent', data.percent + '%');
+                div.innerHTML = `
+                    <div class="result-content">
+                        <strong style="font-size:1.2em">${data.name}</strong> (${data.system})<br>
+                        <span style="font-size:0.9em; opacity:0.9">${statusText}</span><br>
+                        <strong style="font-size:1.3em">${data.score} баллов</strong> из ${data.max}
+                        <div class="score-bar">
+                            <div class="score-fill" style="width: ${data.percent}%"></div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function generateSchedule(sortedDragons) {
+            const container = document.getElementById('scheduleContainer');
+            container.innerHTML = '';
+            
+            // Берем топ-2 или топ-3, если у третьего тоже выше порога "ок"
+            const topDragons = [];
+            
+            sortedDragons.forEach(([key, data]) => {
+                if (topDragons.length < 2 || (topDragons.length < 3 && data.score > data.thresholds.ok)) {
+                    topDragons.push({key, ...data});
+                }
+            });
+            
+            const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+            let schedule = {};
+            
+            if (topDragons.length === 1) {
+                // Один дракон: через день + воскресенье выходной
+                days.forEach((day, i) => {
+                    if (day === 'Воскресенье') {
+                        schedule[day] = [{name: "Выходной", system: "Восстановление", rituals: ["Отдых от ритуалов"], color: "#95a5a6"}];
+                    } else if (i % 2 === 0) { // Пн(0), Ср(2), Пт(4)
+                        schedule[day] = [topDragons[0]];
+                    } else {
+                        schedule[day] = [{name: "Отдых", system: "Восстановление", rituals: ["Легкая прогулка", "Расслабление"], color: "#95a5a6"}];
+                    }
+                });
+            } else if (topDragons.length === 2) {
+                // Два дракона: чередование, воскресенье выходной
+                days.forEach((day, i) => {
+                    if (day === 'Воскресенье') {
+                        schedule[day] = [{name: "Выходной", system: "Восстановление", rituals: ["Отдых от ритуалов"], color: "#95a5a6"}];
+                    } else if (i % 2 === 0) { // Пн, Ср, Пт
+                        schedule[day] = [topDragons[0]];
+                    } else { // Вт, Чт, Сб
+                        schedule[day] = [topDragons[1]];
+                    }
+                });
+            } else {
+                // Три дракона: Пн/Чт - первый, Вт/Пт - второй, Ср/Сб - третий, Вс - выходной
+                schedule = {
+                    'Понедельник': [topDragons[0]],
+                    'Вторник': [topDragons[1]],
+                    'Среда': [topDragons[2]],
+                    'Четверг': [topDragons[0]],
+                    'Пятница': [topDragons[1]],
+                    'Суббота': [topDragons[2]],
+                    'Воскресенье': [{name: "Выходной", system: "Восстановление", rituals: ["Отдых от ритуалов"], color: "#95a5a6"}]
+                };
+            }
+            
+            // Вывод расписания
+            days.forEach(day => {
+                const dayData = schedule[day];
+                const div = document.createElement('div');
+                div.className = 'day-card';
+                div.style.borderLeftColor = dayData[0].color;
+                
+                let ritualsHtml = '';
+                dayData.forEach(dragon => {
+                    if (dragon.rituals) {
+                        const list = dragon.rituals.map(r => `<li>${r}</li>`).join('');
+                        ritualsHtml += `
+                            <div style="margin-bottom:10px;">
+                                <strong style="color:${dragon.color}">${dragon.name}</strong> (${dragon.system})
+                                <ul class="ritual-list">${list}</ul>
+                            </div>
+                        `;
+                    } else {
+                        ritualsHtml += `<div style="color:#7f8c8d; font-style:italic">${dragon.system}</div>`;
+                    }
+                });
+                
+                div.innerHTML = `
+                    <strong style="font-size:1.1em">${day}</strong>
+                    ${ritualsHtml}
+                `;
+                container.appendChild(div);
+            });
+            
+            // Дополнительные рекомендации
+            const recDiv = document.createElement('div');
+            recDiv.style.marginTop = '20px';
+            recDiv.style.padding = '15px';
+            recDiv.style.background = '#e8f8f5';
+            recDiv.style.borderRadius = '8px';
+            
+            const mainPriority = topDragons[0];
+            let freqText = "";
+            if (mainPriority.score > mainPriority.thresholds.warn) {
+                freqText = "🔥 <strong>Срочный режим:</strong> Выбранные ритуалы можно выполнять ежедневно или через день до стабилизации состояния.";
+            } else {
+                freqText = "📅 <strong>Регулярный режим:</strong> Следуйте расписанию выше. Через месяц перепройдите тест.";
+            }
+            
+            recDiv.innerHTML = `
+                <strong>💡 Персональные рекомендации:</strong><br>
+                ${freqText}<br><br>
+                <strong>Ваш приоритет №1:</strong> ${mainPriority.name} — уделите этой системе максимальное внимание.
+            `;
+            container.appendChild(recDiv);
+        }
+
+        // Запуск при загрузке
+        window.onload = initForm;
+    </script>
+</body>
+</html>
