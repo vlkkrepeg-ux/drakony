@@ -242,8 +242,8 @@
             white: {
                 name: "🤍 Белый Дракон",
                 system: "Легкие, Толстый кишечник",
-                max: 13, // 13 вопросов * 1 балл (0/1)
-                thresholds: { ok: 6, warn: 10 }, // пересчитаны под 0-1 шкалу
+                max: 13,
+                thresholds: { ok: 6, warn: 10 },
                 color: "#bdc3c7",
                 questions: [
                     "Легко впадаю в грусть/тоску (особенно осенью)",
@@ -260,7 +260,7 @@
                     "Сухая/бледная кожа, слабые волосы",
                     "Тихий голос, трудно говорить громко"
                 ],
-                scale: [0, 1], // только 0 или 1
+                scale: [0, 1],
                 labels: ["Нет", "Да"],
                 rituals: [
                     "🌅 Утро: «Радость, привет!»",
@@ -306,8 +306,8 @@
             blue: {
                 name: "💙 Синий Дракон",
                 system: "Почки, Мочевой пузырь",
-                max: 24, // 9 базовых + 15 патологий (5*3)
-                thresholds: { ok: 3, warn: 8 }, // абсолютные значения, не проценты
+                max: 24,
+                thresholds: { ok: 3, warn: 8 },
                 color: "#3498db",
                 questions: [
                     "Холод в пояснице, коленях или стопах",
@@ -354,7 +354,7 @@
             green: {
                 name: "💚 Зеленый Дракон",
                 system: "Печень, Желчный пузырь",
-                max: 45, // 15 вопросов * 3
+                max: 45,
                 thresholds: { ok: 15, warn: 30 },
                 color: "#27ae60",
                 questions: [
@@ -410,7 +410,6 @@
 
         function calculateResults() {
             const results = {};
-            const formData = new FormData(document.getElementById('dragonForm'));
             
             // Подсчет базовых баллов
             for (const [key, dragon] of Object.entries(dragons)) {
@@ -499,10 +498,10 @@
                 days.forEach((day, i) => {
                     if (day === 'Воскресенье') {
                         schedule[day] = [{name: "Выходной", system: "Восстановление", rituals: ["Отдых от ритуалов"], color: "#95a5a6"}];
-                    } else if (i % 2 === 0) { // Пн(0), Ср(2), Пт(4)
+                    } else if (i % 2 === 0) { 
                         schedule[day] = [topDragons[0]];
                     } else {
-                        schedule[day] = = [{name: "Отдых", system: "Восстановление", rituals: ["Легкая прогулка", "Расслабление"], color: "#95a5a6"}];
+                        schedule[day] = [{name: "Отдых", system: "Восстановление", rituals: ["Легкая прогулка", "Расслабление"], color: "#95a5a6"}];
                     }
                 });
             } else if (topDragons.length === 2) {
@@ -510,9 +509,9 @@
                 days.forEach((day, i) => {
                     if (day === 'Воскресенье') {
                         schedule[day] = [{name: "Выходной", system: "Восстановление", rituals: ["Отдых от ритуалов"], color: "#95a5a6"}];
-                    } else if (i % 2 === 0) { // Пн, Ср, Пт
+                    } else if (i % 2 === 0) { 
                         schedule[day] = [topDragons[0]];
-                    } else { // Вт, Чт, Сб
+                    } else { 
                         schedule[day] = [topDragons[1]];
                     }
                 });
