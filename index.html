@@ -101,6 +101,7 @@
         .status-ok { background: #27ae60; color: white; }
         .status-warn { background: #f39c12; color: white; }
         .status-crit { background: #e74c3c; color: white; }
+        .status-overload { background: #8e44ad; color: white; }
         
         .score-bar { 
             height: 8px; 
@@ -159,6 +160,14 @@
             border-radius: 10px; 
             margin-top: 20px;
             border-left: 4px solid #3498db;
+        }
+        
+        .support-list { 
+            background: #fff9e6; 
+            padding: 15px; 
+            border-radius: 10px; 
+            margin: 20px 0;
+            border-left: 4px solid #f1c40f;
         }
         
         @media print {
@@ -224,6 +233,8 @@
             <h2>📊 Ваши результаты</h2>
             <div id="scoresContainer"></div>
             
+            <div id="supportContainer"></div>
+            
             <div class="schedule">
                 <h2>🗓 Ваш персональный план на месяц</h2>
                 <div id="scheduleContainer"></div>
@@ -243,7 +254,6 @@
                 name: "🤍 Белый Дракон",
                 system: "Легкие, Толстый кишечник",
                 max: 13,
-                thresholds: { ok: 6, warn: 10 },
                 color: "#bdc3c7",
                 questions: [
                     "Легко впадаю в грусть/тоску (особенно осенью)",
@@ -274,7 +284,6 @@
                 name: "💛 Желтый Дракон",
                 system: "Селезенка, Поджелудочная",
                 max: 15,
-                thresholds: { ok: 3, warn: 7 },
                 color: "#f1c40f",
                 questions: [
                     "Слабость после еды",
@@ -307,7 +316,6 @@
                 name: "💙 Синий Дракон",
                 system: "Почки, Мочевой пузырь",
                 max: 24,
-                thresholds: { ok: 3, warn: 8 },
                 color: "#3498db",
                 questions: [
                     "Холод в пояснице, коленях или стопах",
@@ -334,7 +342,6 @@
                 name: "❤️ Красный Дракон",
                 system: "Сердце, Тонкий кишечник",
                 max: 5,
-                thresholds: { ok: 2, warn: 4 },
                 color: "#e74c3c",
                 questions: [
                     "Язвочки на языке или яркий кончик языка",
@@ -355,7 +362,6 @@
                 name: "💚 Зеленый Дракон",
                 system: "Печень, Желчный пузырь",
                 max: 45,
-                thresholds: { ok: 15, warn: 30 },
                 color: "#27ae60",
                 questions: [
                     "Раздражительность, выхожу из себя по пустякам",
@@ -411,7 +417,7 @@
         function calculateResults() {
             const results = {};
             
-            // Подсчет базовых баллов
+            // Подсчет баллов и процентов
             for (const [key, dragon] of Object.entries(dragons)) {
                 let score = 0;
                 document.querySelectorAll(`select[data-dragon="${key}"]`).forEach(select => {
@@ -425,16 +431,18 @@
                     });
                 }
                 
+                const percent = (score / dragon.max * 100).toFixed(1);
+                
                 results[key] = {
                     score: score,
                     max: dragon.max,
-                    percent: (score / dragon.max * 100).toFixed(0),
+                    percent: parseFloat(percent),
                     ...dragon
                 };
             }
 
-            // Сортировка по убыванию баллов
-            const sorted = Object.entries(results).sort((a, b) => b[1].score - a[1].score);
+            // Сортируем по проценту (от большего к меньшему)
+            const sorted = Object.entries(results).sort((a, b) => b[1].percent - a[1].percent);
             
             displayResults(sorted);
             generateSchedule(sorted);
@@ -443,31 +451,40 @@
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
         }
 
+        function getStatus(percent) {
+            if (percent <= 20) {
+                return { class: 'status-ok', text: '✅ В хорошем тонусе' };
+            } else if (percent <= 40) {
+                return { class: 'status-warn', text: '🌿 Есть признаки дисбаланса' };
+            } else if (percent <= 80) {
+                return { class: 'status-crit', text: '🌱 Нуждается в поддержке и заботе' };
+            } else {
+                return { class: 'status-overload', text: '🔥 Нужна активная помощь, испытывает перегрузку' };
+            }
+        }
+
         function displayResults(sortedDragons) {
             const container = document.getElementById('scoresContainer');
             container.innerHTML = '';
             
+            // Список драконов, нуждающихся в поддержке (выше 40%)
+            const needSupport = [];
+            
             sortedDragons.forEach(([key, data]) => {
-                let statusClass, statusText;
-                if (data.score <= data.thresholds.ok) {
-                    statusClass = 'status-ok';
-                    statusText = '✅ В хорошем тонусе';
-                } else if (data.score <= data.thresholds.warn) {
-                    statusClass = 'status-warn';
-                    statusText = '🌿 Есть признаки дисбаланса';
-                } else {
-                    statusClass = 'status-crit';
-                    statusText = '🌱 Нуждается в поддержке и заботе';
+                const status = getStatus(data.percent);
+                
+                if (data.percent > 40) {
+                    needSupport.push(data);
                 }
                 
                 const div = document.createElement('div');
-                div.className = `result-card ${statusClass}`;
+                div.className = `result-card ${status.class}`;
                 div.style.setProperty('--percent', data.percent + '%');
                 div.innerHTML = `
                     <div class="result-content">
                         <strong style="font-size:1.2em">${data.name}</strong> (${data.system})<br>
-                        <span style="font-size:0.9em; opacity:0.9">${statusText}</span><br>
-                        <strong style="font-size:1.3em">${data.score} баллов</strong> из ${data.max}
+                        <span style="font-size:0.9em; opacity:0.9">${status.text}</span><br>
+                        <strong style="font-size:1.3em">${data.percent}%</strong> (${data.score} из ${data.max})
                         <div class="score-bar">
                             <div class="score-fill" style="width: ${data.percent}%"></div>
                         </div>
@@ -475,56 +492,106 @@
                 `;
                 container.appendChild(div);
             });
+            
+            // Блок с приоритетами
+            const supportContainer = document.getElementById('supportContainer');
+            if (needSupport.length > 0) {
+                const topPriority = needSupport[0]; // Максимальный процент
+                const others = needSupport.slice(1);
+                
+                let othersText = '';
+                if (others.length > 0) {
+                    othersText = '<br><strong>Также требуют внимания:</strong> ' + 
+                        others.map(d => `${d.name} (${d.percent}%)`).join(', ');
+                }
+                
+                supportContainer.innerHTML = `
+                    <div class="support-list">
+                        <h3>🎯 Ваш приоритет №1</h3>
+                        <p style="font-size:1.1em; margin-top:10px;">
+                            <strong>${topPriority.name}</strong> — наибольший процент дисбаланса 
+                            (${topPriority.percent}%)<br>
+                            <em>Рекомендуется начать работу именно с этой системы.</em>
+                            ${othersText}
+                        </p>
+                    </div>
+                `;
+            } else {
+                // Если нет критичных, берем того, кто максимальный из оставшихся
+                const topPriority = sortedDragons[0][1];
+                if (topPriority.percent > 20) {
+                    supportContainer.innerHTML = `
+                        <div class="support-list" style="background:#e9f7ef; border-left-color:#27ae60;">
+                            <h3>🎯 Ваш приоритет №1</h3>
+                            <p style="margin-top:10px;">
+                                <strong>${topPriority.name}</strong> — есть признаки дисбаланса (${topPriority.percent}%)<br>
+                                <em>Рекомендуется профилактическая работа с этой системой.</em>
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    supportContainer.innerHTML = `
+                        <div class="support-list" style="background:#e9f7ef; border-left-color:#27ae60;">
+                            <h3>🎉 Отличные новости!</h3>
+                            <p style="margin-top:10px;">
+                                Все ваши системы в хорошем тонусе. 
+                                Продолжайте поддерживающую профилактику!
+                            </p>
+                        </div>
+                    `;
+                }
+            }
         }
 
         function generateSchedule(sortedDragons) {
             const container = document.getElementById('scheduleContainer');
             container.innerHTML = '';
             
-            // Берем топ-2 или топ-3, если у третьего тоже выше порога "ок"
-            const topDragons = [];
+            // Берем драконов, которые выше 20% (не в идеальном тонусе)
+            const dragonsToWork = sortedDragons
+                .filter(([key, data]) => data.percent > 20)
+                .map(([key, data]) => data);
             
-            sortedDragons.forEach(([key, data]) => {
-                if (topDragons.length < 2 || (topDragons.length < 3 && data.score > data.thresholds.ok)) {
-                    topDragons.push({key, ...data});
-                }
-            });
+            if (dragonsToWork.length === 0) {
+                container.innerHTML = '<p>Все системы в хорошем тонусе! Достаточно поддерживающей профилактики 1-2 раза в неделю любым драконом по выбору.</p>';
+                return;
+            }
             
             const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
             let schedule = {};
             
-            if (topDragons.length === 1) {
-                // Один дракон: через день + воскресенье выходной
+            // Распределяем драконов по дням
+            if (dragonsToWork.length === 1) {
                 days.forEach((day, i) => {
                     if (day === 'Воскресенье') {
-                        schedule[day] = [{name: "Выходной", system: "Восстановление", rituals: ["Отдых от ритуалов"], color: "#95a5a6"}];
-                    } else if (i % 2 === 0) { 
-                        schedule[day] = [topDragons[0]];
+                        schedule[day] = [{name: "Выходной", system: "Восстановление", rituals: ["Отдых от ритуалов"], color: "#95a5a6", isRest: true}];
+                    } else if (i % 2 === 0) {
+                        schedule[day] = [dragonsToWork[0]];
                     } else {
-                        schedule[day] = [{name: "Отдых", system: "Восстановление", rituals: ["Легкая прогулка", "Расслабление"], color: "#95a5a6"}];
+                        schedule[day] = [{name: "Отдых", system: "Восстановление", rituals: ["Легкая прогулка", "Расслабление"], color: "#95a5a6", isRest: true}];
                     }
                 });
-            } else if (topDragons.length === 2) {
-                // Два дракона: чередование, воскресенье выходной
+            } else if (dragonsToWork.length === 2) {
                 days.forEach((day, i) => {
                     if (day === 'Воскресенье') {
-                        schedule[day] = [{name: "Выходной", system: "Восстановление", rituals: ["Отдых от ритуалов"], color: "#95a5a6"}];
-                    } else if (i % 2 === 0) { 
-                        schedule[day] = [topDragons[0]];
-                    } else { 
-                        schedule[day] = [topDragons[1]];
+                        schedule[day] = [{name: "Выходной", system: "Восстановление", rituals: ["Отдых от ритуалов"], color: "#95a5a6", isRest: true}];
+                    } else if (i % 2 === 0) {
+                        schedule[day] = [dragonsToWork[0]];
+                    } else {
+                        schedule[day] = [dragonsToWork[1]];
                     }
                 });
             } else {
-                // Три дракона: Пн/Чт - первый, Вт/Пт - второй, Ср/Сб - третий, Вс - выходной
+                // 3 и более драконов - берем топ-3
+                const top3 = dragonsToWork.slice(0, 3);
                 schedule = {
-                    'Понедельник': [topDragons[0]],
-                    'Вторник': [topDragons[1]],
-                    'Среда': [topDragons[2]],
-                    'Четверг': [topDragons[0]],
-                    'Пятница': [topDragons[1]],
-                    'Суббота': [topDragons[2]],
-                    'Воскресенье': [{name: "Выходной", system: "Восстановление", rituals: ["Отдых от ритуалов"], color: "#95a5a6"}]
+                    'Понедельник': [top3[0]],
+                    'Вторник': [top3[1] || top3[0]],
+                    'Среда': [top3[2] || top3[0]],
+                    'Четверг': [top3[0]],
+                    'Пятница': [top3[1] || top3[0]],
+                    'Суббота': [top3[2] || top3[0]],
+                    'Воскресенье': [{name: "Выходной", system: "Восстановление", rituals: ["Отдых от ритуалов"], color: "#95a5a6", isRest: true}]
                 };
             }
             
@@ -538,10 +605,12 @@
                 let ritualsHtml = '';
                 dayData.forEach(dragon => {
                     if (dragon.rituals) {
+                        // Не показываем процент для выходных дней
+                        const percentInfo = dragon.isRest ? '' : `<span style="color:#666; font-size:0.9em"> (${dragon.percent}%)</span>`;
                         const list = dragon.rituals.map(r => `<li>${r}</li>`).join('');
                         ritualsHtml += `
                             <div style="margin-bottom:10px;">
-                                <strong style="color:${dragon.color}">${dragon.name}</strong> (${dragon.system})
+                                <strong style="color:${dragon.color}">${dragon.name}</strong>${percentInfo}
                                 <ul class="ritual-list">${list}</ul>
                             </div>
                         `;
@@ -550,32 +619,30 @@
                     }
                 });
                 
-                div.innerHTML = `
-                    <strong style="font-size:1.1em">${day}</strong>
-                    ${ritualsHtml}
-                `;
+                div.innerHTML = `<strong style="font-size:1.1em">${day}</strong>${ritualsHtml}`;
                 container.appendChild(div);
             });
             
-            // Дополнительные рекомендации
+            // Рекомендации по частоте
             const recDiv = document.createElement('div');
             recDiv.style.marginTop = '20px';
             recDiv.style.padding = '15px';
             recDiv.style.background = '#e8f8f5';
             recDiv.style.borderRadius = '8px';
             
-            const mainPriority = topDragons[0];
+            const mainPriority = dragonsToWork[0];
             let freqText = "";
-            if (mainPriority.score > mainPriority.thresholds.warn) {
-                freqText = "🔥 <strong>Интенсивный режим:</strong> Выбранные ритуалы можно выполнять ежедневно или через день до стабилизации состояния.";
+            if (mainPriority.percent > 80) {
+                freqText = "🔥 <strong>Интенсивный режим:</strong> Система испытывает перегрузку. Рекомендуется ежедневная работа до стабилизации.";
+            } else if (mainPriority.percent > 40) {
+                freqText = "📅 <strong>Поддерживающий режим:</strong> Система нуждается в заботе. Следуйте расписанию выше, через месяц перепройдите тест.";
             } else {
-                freqText = "📅 <strong>Регулярный режим:</strong> Следуйте расписанию выше. Через месяц перепройдите тест.";
+                freqText = "📅 <strong>Профилактический режим:</strong> Есть легкие признаки дисбаланса. Достаточно 2-3 сеансов в неделю.";
             }
             
             recDiv.innerHTML = `
-                <strong>💡 Персональные рекомендации:</strong><br>
-                ${freqText}<br><br>
-                <strong>Ваш приоритет №1:</strong> ${mainPriority.name} — уделите этой системе максимальное внимание.
+                <strong>💡 Рекомендации по интенсивности:</strong><br>
+                ${freqText}
             `;
             container.appendChild(recDiv);
         }
